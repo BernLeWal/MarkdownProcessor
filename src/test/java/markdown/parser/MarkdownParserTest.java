@@ -88,12 +88,39 @@ public class MarkdownParserTest {
         assertEquals( expected, actual );
     }
 
+    @Test
+    void test_3Paragraph1Text() {
+        var expected = new MdDoc();
+        expected.addChild( new MdParagraph("First Paragraph") );
+        expected.addChild( new MdParagraph("Second Paragraph") );
+        expected.addChild( new MdParagraph("Third Paragraph") );
+        var actual = MarkdownParser.parse("First Paragraph\n\nSecond Paragraph\n\nThird Paragraph");
+        assertEquals( expected, actual );
+    }
+
 
     @Test
-    void test_1Heading() {
+    void test_1Heading1() {
         var expected = new MdDoc();
         expected.addChild( new MdHeading(1, "Heading 1") );
         var actual = MarkdownParser.parse("# Heading 1");
         assertEquals( expected, actual );
     }
+
+    @Test
+    void test_1Heading2() {
+        var expected = new MdDoc();
+        expected.addChild( new MdHeading(2, "Heading 2") );
+        var actual = MarkdownParser.parse("## Heading 2");
+        assertEquals( expected, actual );
+    }
+
+    @Test
+    void test_1Heading3() {
+        var expected = new MdDoc();
+        expected.addChild( new MdHeading(3, "Heading 3") );
+        var actual = MarkdownParser.parse("### Heading 3");
+        assertEquals( expected, actual );
+    }
+
 }

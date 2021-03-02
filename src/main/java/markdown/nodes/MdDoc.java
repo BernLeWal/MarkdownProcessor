@@ -1,5 +1,6 @@
 package markdown.nodes;
 
+import markdown.interpreter.Visitor;
 import markdown.parser.MarkdownLexer;
 import markdown.parser.MarkdownToken;
 
@@ -24,6 +25,12 @@ public class MdDoc extends MdNode {
 
     public void setFilePath(File filePath) {
         this.filePath = filePath;
+    }
+
+
+    @Override
+    public void accept(Visitor visitor) {
+        visitor.visitDoc(this);
     }
 
 

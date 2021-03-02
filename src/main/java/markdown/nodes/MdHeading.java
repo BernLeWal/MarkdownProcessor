@@ -1,5 +1,6 @@
 package markdown.nodes;
 
+import markdown.interpreter.Visitor;
 import markdown.parser.MarkdownToken;
 import markdown.parser.MarkdownTokenType;
 
@@ -15,6 +16,17 @@ public class MdHeading extends MdNode {
     public MdHeading(int level, String text) {
         this.level = level;
         addChild(new MdText(text));
+    }
+
+
+    public int getLevel() {
+        return level;
+    }
+
+
+    @Override
+    public void accept(Visitor visitor) {
+        visitor.visitHeading(this);
     }
 
     @Override

@@ -1,5 +1,7 @@
 package markdown.nodes;
 
+import markdown.interpreter.Visitor;
+
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
@@ -58,6 +60,15 @@ public abstract class MdNode implements Composable<MdNode> {
     public void setValue(String value) {
         this.value = value;
     }
+
+
+    public abstract void accept(Visitor visitor);
+
+    public void acceptChildren(Visitor visitor) {
+        for ( MdNode child : children )
+            child.accept(visitor);
+    }
+
 
     @Override
     public String toString() {
