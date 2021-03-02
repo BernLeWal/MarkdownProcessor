@@ -16,18 +16,4 @@ public class MdText extends MdNode {
                 "value='" + getValue() + '\'' +
                 '}';
     }
-
-    // parser:
-    public static MdNode parse(ListIterator<MarkdownToken> it) {
-        if( !it.hasNext() )
-            return null;
-
-        MarkdownToken token = it.next();
-        if (token.getType()!=MarkdownTokenType.T) {
-            // not a text-token
-            it.previous();
-            return null;
-        }
-        return new MdText(token.getValue());
-    }
 }
