@@ -2,7 +2,7 @@
 ; BNF see https://en.wikipedia.org/wiki/Backus%E2%80%93Naur_form
 
 document ::= { paragraph | heading }*
-paragraph ::= text | { text crlf }*
+paragraph ::= { text crlf }*
 heading         ::= "#" { "#" }* text crlf
 heading         ::= "#" text crlf | "# " text crlf | "#" heading
 
