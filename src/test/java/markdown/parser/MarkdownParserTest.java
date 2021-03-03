@@ -14,10 +14,18 @@ public class MarkdownParserTest {
     }
 
     @Test
-    void test_1ParagraphEmpty() {
+    void test_1ParagraphEmptyA() {
         var expected = new MdDoc();
         expected.addChild( new MdParagraph() );
         var actual = MarkdownParser.parse("\n");
+        assertEquals( expected, actual );
+    }
+
+    @Test
+    void test_1ParagraphEmptyB() {
+        var expected = new MdDoc();
+        expected.addChild( new MdParagraph() );
+        var actual = MarkdownParser.parse("\n\n");
         assertEquals( expected, actual );
     }
 
@@ -26,17 +34,7 @@ public class MarkdownParserTest {
         var expected = new MdDoc();
         expected.addChild( new MdParagraph() );
         expected.addChild( new MdParagraph() );
-        var actual = MarkdownParser.parse("\n\n ");
-        assertEquals( expected, actual );
-    }
-
-    @Test
-    void test_3ParagraphEmpty() {
-        var expected = new MdDoc();
-        expected.addChild( new MdParagraph() );
-        expected.addChild( new MdParagraph() );
-        expected.addChild( new MdParagraph() );
-        var actual = MarkdownParser.parse("\n\n\n\n ");
+        var actual = MarkdownParser.parse("\n\n\n\n");
         assertEquals( expected, actual );
     }
 

@@ -8,7 +8,7 @@ import java.util.ListIterator;
 
 /**
  * The MarkdownParser parses the flat token-stream to build up a hierarchy of MdNodes.
- *
+ * <p>
  * The grammar rules are shown for documentation at the tryParse(...)-Methods using the BNF notation
  * BNF see https://en.wikipedia.org/wiki/Backus%E2%80%93Naur_form
  */
@@ -22,12 +22,13 @@ public class MarkdownParser {
 
     /**
      * Parse the MdDoc root-node out of a token-stream where the iterator starts at the begin.
-     * @param filePath optional; a filePath to an .md-file where the initial markdown was stored
-     * @param it the token-stream; it should point to the very head element
-     * @return the root-node of the markdown-hierarchy; on error it returns null
      *
+     * @param filePath optional; a filePath to an .md-file where the initial markdown was stored
+     * @param it       the token-stream; it should point to the very head element
+     * @return the root-node of the markdown-hierarchy; on error it returns null
+     * <p>
      * Rule (BNF):
-     *  document ::= {paragraph | heading}*
+     * document ::= {paragraph | heading}*
      */
     public static MdDoc parse(File filePath, ListIterator<MarkdownToken> it) {
         MdDoc doc = new MdDoc(filePath);
@@ -42,7 +43,7 @@ public class MarkdownParser {
                     throw new MarkdownParseException("Invalid token!", doc, it.next());
                 }
             }
-        } catch( MarkdownParseException e ) {
+        } catch (MarkdownParseException e) {
             e.printStackTrace();
         }
 
@@ -52,12 +53,11 @@ public class MarkdownParser {
 
     /**
      * Try to parse an heading element
+     *
      * @param it
      * @return
-     * @throws MarkdownParseException
-     *
-     * Rule (BNF):
-     *  heading ::= "#" {"#"}* {text}* crlf
+     * @throws MarkdownParseException Rule (BNF):
+     *                                heading ::= "#" {"#"}* {text}* crlf
      */
     private static MdHeading tryParseHeading(ListIterator<MarkdownToken> it) throws MarkdownParseException {
         if (!it.hasNext())
@@ -65,40 +65,32 @@ public class MarkdownParser {
 
         // check for start-token MarkdownTokenType.H
         MarkdownToken token;
-        if ((token=readToken(MarkdownTokenType.H, it))==null)
+        if ((token = readToken(MarkdownTokenType.H, it)) == null)
             return null;
         MdHeading heading = new MdHeading(token.getValue().length());
 
         // add child-tokens
-        MdNode node = null;
         while (it.hasNext()) {
+            MdNode node = null;
             if ((node = tryParseText(it)) != null) {
                 heading.addChild(node);
-            } else {
-                break;
-            }
-        }
-        if (node == null) {
-            // Markdown Syntax error
-            throw new MarkdownParseException("Heading is invalid, no text-token!", heading, it.next());
+            } else
+                throw new MarkdownParseException("Heading is invalid, no text-token!", heading, it.next());
         }
 
         // check for end-token MarkdownTokenType.CRLF
-        if (it.hasNext()) {
-            if ((token=readToken(MarkdownTokenType.CRLF, it))==null)
-                throw new MarkdownParseException("Invalid token!", heading, token);
-        }
+        if (it.hasNext() && ((token = readToken(MarkdownTokenType.CRLF, it)) == null))
+            throw new MarkdownParseException("Invalid token!", heading, token);
 
         return heading;
     }
 
     /**
      * Try to parse a paragraph element
-     * @param it
-     * @return
      *
-     * Rule (BNF):
-     *  paragraph ::= { text | crlf }* crlf
+     * @param it
+     * @return Rule (BNF):
+     * paragraph ::= { text | crlf }* crlf
      */
     private static MdParagraph tryParseParagraph(ListIterator<MarkdownToken> it) {
         if (!it.hasNext())
@@ -112,21 +104,16 @@ public class MarkdownParser {
             if ((node = tryParseText(it)) != null) {
                 paragraph.addChild(node);
             } else {
-                MarkdownToken token = it.next();
-                if (token.getType() == MarkdownTokenType.CRLF) {
-                    if (it.hasNext()) {
-                        if ((token=readToken(MarkdownTokenType.CRLF, it))!=null)
-                            // double CRLF: end of paragraph
-                            break;
-                    }
-                } else if (token.getType() == MarkdownTokenType.H) {
+                MarkdownToken token;
+                if ((token = readToken(MarkdownTokenType.CRLF, it)) != null) {
+                    if (it.hasNext() && ((token = readToken(MarkdownTokenType.CRLF, it)) != null))
+                        break;  // double CRLF: end of paragraph
+                } else {
                     // end of paragraph
-                    it.previous();
-                    if (paragraph.isLeaf()) {
-                        // no children!
+                    if (paragraph.isLeaf())     // no children!
                         return null;
-                    }
-                    break;
+                    else
+                        break;
                 }
             }
         }
@@ -136,29 +123,27 @@ public class MarkdownParser {
 
     /**
      * Try to parse a simple text
+     *
      * @param it
-     * @return
-     *
-     * Rule (BNF):
-     *  text ::= {character}*
-     *
-     *  character       ::= letter | digit | symbol
-     *  letter          ::= "A" | "B" | "C" | "D" | "E" | "F" | "G" | "H" | "I" | "J" | "K" | "L" | "M" | "N" | "O" | "P" | "Q" | "R" | "S" | "T" | "U" | "V" | "W" | "X" | "Y" | "Z" | "a" | "b" | "c" | "d" | "e" | "f" | "g" | "h" | "i" | "j" | "k" | "l" | "m" | "n" | "o" | "p" | "q" | "r" | "s" | "t" | "u" | "v" | "w" | "x" | "y" | "z"
-     *  digit           ::= "0" | "1" | "2" | "3" | "4" | "5" | "6" | "7" | "8" | "9"
-     *  symbol          ::= "|" | " " | "!" | "#" | "$" | "%" | "&" | "(" | ")" | "*" | "+" | "," | "-" | "." | "/" | ":" | ";" | ">" | "=" | "<" | "?" | "@" | "[" | "\" | "]" | "^" | "_" | "`" | "{" | "}" | "~"
-     *
-     *  crlf            ::= "\n" | "\r\n"
+     * @return Rule (BNF):
+     * text ::= {character}*
+     * <p>
+     * character       ::= letter | digit | symbol
+     * letter          ::= "A" | "B" | "C" | "D" | "E" | "F" | "G" | "H" | "I" | "J" | "K" | "L" | "M" | "N" | "O" | "P" | "Q" | "R" | "S" | "T" | "U" | "V" | "W" | "X" | "Y" | "Z" | "a" | "b" | "c" | "d" | "e" | "f" | "g" | "h" | "i" | "j" | "k" | "l" | "m" | "n" | "o" | "p" | "q" | "r" | "s" | "t" | "u" | "v" | "w" | "x" | "y" | "z"
+     * digit           ::= "0" | "1" | "2" | "3" | "4" | "5" | "6" | "7" | "8" | "9"
+     * symbol          ::= "|" | " " | "!" | "#" | "$" | "%" | "&" | "(" | ")" | "*" | "+" | "," | "-" | "." | "/" | ":" | ";" | ">" | "=" | "<" | "?" | "@" | "[" | "\" | "]" | "^" | "_" | "`" | "{" | "}" | "~"
+     * <p>
+     * crlf            ::= "\n" | "\r\n"
      */
     private static MdText tryParseText(ListIterator<MarkdownToken> it) {
-        if( !it.hasNext() )
+        if (!it.hasNext())
             return null;
 
         MarkdownToken token;
-        if ((token=readToken(MarkdownTokenType.T,it))==null)
+        if ((token = readToken(MarkdownTokenType.T, it)) == null)
             return null;
         return new MdText(token.getValue());
     }
-
 
 
     //
