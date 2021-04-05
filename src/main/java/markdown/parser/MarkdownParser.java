@@ -74,6 +74,8 @@ public class MarkdownParser {
             MdNode node = null;
             if ((node = tryParseText(it)) != null) {
                 heading.addChild(node);
+            } else if (tryParseCrLf(it) != null) {
+                return heading;
             } else
                 throw new MarkdownParseException("Heading is invalid, no text-token!", heading, it.next());
         }
@@ -143,6 +145,17 @@ public class MarkdownParser {
         if ((token = readToken(MarkdownTokenType.T, it)) == null)
             return null;
         return new MdText(token.getValue());
+    }
+
+    private static MdText tryParseCrLf(ListIterator<MarkdownToken> it) {
+        if (!it.hasNext())
+            return null;
+
+        MarkdownToken token;
+        if ((token = readToken(MarkdownTokenType.CRLF, it)) == null)
+            return null;
+
+        return new MdText("\n");
     }
 
 

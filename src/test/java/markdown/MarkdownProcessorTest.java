@@ -40,7 +40,12 @@ class MarkdownProcessorTest {
     }
 
     @Test
-    void test_basic1_paragraphs() {
-        test_file("basic1_paragraphs.md", "basic1_paragraphs.html");
+    void test_basic1_text() {
+        test_file("basic1_text.md", "basic1_text.html");
+    }
+
+    @Test
+    void test_basic2_headings() {
+        test_file( "basic2_headings.md", "basic2_headings.html");
     }
 }
