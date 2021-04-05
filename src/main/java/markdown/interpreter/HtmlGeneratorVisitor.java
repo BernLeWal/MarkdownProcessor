@@ -1,9 +1,6 @@
 package markdown.interpreter;
 
-import markdown.nodes.MdDoc;
-import markdown.nodes.MdHeading;
-import markdown.nodes.MdParagraph;
-import markdown.nodes.MdText;
+import markdown.nodes.*;
 
 public class HtmlGeneratorVisitor implements Visitor {
     private StringBuilder content = new StringBuilder();
@@ -25,6 +22,11 @@ public class HtmlGeneratorVisitor implements Visitor {
     }
 
     @Override
+    public void visitHtml(MdHtml html) {
+        content.append(html.getValue() + "\n");
+    }
+
+    @Override
     public void visitHeading(MdHeading heading) {
         content.append("<h" + heading.getLevel() + ">");
         heading.acceptChildren(this);
@@ -41,5 +43,10 @@ public class HtmlGeneratorVisitor implements Visitor {
     @Override
     public void visitText(MdText text) {
         content.append(text.getValue() + " ");
+    }
+
+    @Override
+    public void visitBreak(MdBreak lineBreak) {
+        content.append("<br/>\n");
     }
 }

@@ -39,6 +39,10 @@ public class MarkdownParser {
                     doc.addChild(node);
                 } else if ((node = tryParseHeading(it)) != null) {
                     doc.addChild(node);
+                } else if ((node = tryParseBreak(it)) != null ) {
+                    doc.addChild(node);
+                } else if ((node = tryParseHtml(it)) != null) {
+                    doc.addChild(node);
                 } else {
                     throw new MarkdownParseException("Invalid token!", doc, it.next());
                 }
@@ -48,6 +52,23 @@ public class MarkdownParser {
         }
 
         return doc;
+    }
+
+    /**
+     * Try to parse an html-tag
+     *
+     * @param it
+     * @return
+     */
+    private static MdNode tryParseHtml(ListIterator<MarkdownToken> it) {
+        if (!it.hasNext())
+            return null;
+
+        MarkdownToken token;
+        if ((token = readToken(MarkdownTokenType.HTML, it)) == null)
+            return null;
+
+        return new MdHtml(token.getValue());
     }
 
 
@@ -105,6 +126,10 @@ public class MarkdownParser {
         while (it.hasNext()) {
             if ((node = tryParseText(it)) != null) {
                 paragraph.addChild(node);
+            } else if ((node = tryParseBreak(it)) != null) {
+                paragraph.addChild(node);
+            } else if ((node = tryParseHtml(it)) != null) {
+                paragraph.addChild(node);
             } else {
                 MarkdownToken token;
                 if ((token = readToken(MarkdownTokenType.CRLF, it)) != null) {
@@ -158,6 +183,16 @@ public class MarkdownParser {
         return new MdText("\n");
     }
 
+    private static MdNode tryParseBreak(ListIterator<MarkdownToken> it) {
+        if (!it.hasNext())
+            return null;
+
+        MarkdownToken token;
+        if ((token = readToken(MarkdownTokenType.BR, it)) == null)
+            return null;
+
+        return new MdBreak();
+    }
 
     //
     // Helpers:
