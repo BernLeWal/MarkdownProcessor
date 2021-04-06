@@ -40,22 +40,27 @@ class MarkdownProcessorTest {
     }
 
     @Test
-    void test_basic1_text() {
+    void test_basic01_text() {
         test_file("basic01_text.md", "basic01_text.html");
     }
 
     @Test
-    void test_basic2_headings() {
+    void test_basic02_headings() {
         test_file("basic02_headings.md", "basic02_headings.html");
     }
 
     @Test
-    void test_basic3_paragraphs() {
+    void test_basic03_paragraphs() {
         test_file("basic03_paragraphs.md", "basic03_paragraphs.html");
     }
 
     @Test
-    void test_basic4_linebreaks() {
+    void test_basic04_linebreaks() {
         test_file( "basic04_linebreaks.md", "basic04_linebreaks.html");
+    }
+
+    @Test
+    void test_basic05() {
+        test_file("basic05_emphasis.md", "basic05_emphasis.html");
     }
 }

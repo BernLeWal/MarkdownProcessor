@@ -9,4 +9,5 @@ public interface Visitor {
     void visitParagraph(MdParagraph paragraph);
     void visitText(MdText text);
     void visitBreak(MdBreak lineBreak);
+    void visitEmphasis(MdEmphasis mdEmphasis);
 }

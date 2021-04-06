@@ -68,7 +68,11 @@ public class MarkdownParser {
         if ((token = readToken(MarkdownTokenType.HTML, it)) == null)
             return null;
 
-        return new MdHtml(token.getValue());
+        String value = token.getValue().toLowerCase();
+        if (value.equals("<br>") || value.equals("<br/>") )
+            return new MdBreak();
+        else
+            return new MdHtml(token.getValue());
     }
 
 
@@ -130,6 +134,8 @@ public class MarkdownParser {
                 paragraph.addChild(node);
             } else if ((node = tryParseHtml(it)) != null) {
                 paragraph.addChild(node);
+            } else if ((node = tryParseEmphasis(it)) != null) {
+                paragraph.addChild(node);
             } else {
                 MarkdownToken token;
                 if ((token = readToken(MarkdownTokenType.CRLF, it)) != null) {
@@ -146,6 +152,54 @@ public class MarkdownParser {
         }
 
         return paragraph;
+    }
+
+    private static MdEmphasis tryParseEmphasis(ListIterator<MarkdownToken> it) {
+        if (!it.hasNext())
+            return null;
+        MarkdownToken token;
+        if ((token = readToken(MarkdownTokenType.EM, it)) == null)
+            return null;
+
+        MdEmphasis em = new MdEmphasis(token.getValue());
+        // add child-tokens
+        MdNode node;
+        while (it.hasNext()) {
+            if ((node = tryParseText(it)) != null) {
+                em.addChild(node);
+            } else if ((node = tryParseBreak(it)) != null) {
+                em.addChild(node);
+            } else if ((node = tryParseHtml(it)) != null) {
+                em.addChild(node);
+            } else {
+                if ((token = readToken(MarkdownTokenType.CRLF, it)) != null) {
+                    if (it.hasNext() && ((token = readToken(MarkdownTokenType.CRLF, it)) != null))
+                        return null;  // double CRLF: not a valid em-tag
+                    else
+                        em.addChild( new MdText(" "));
+                }
+                else if ((token = readToken(MarkdownTokenType.EM, it)) != null) {
+                    if ( token.getValue().equals(em.getValueReverse()) ) {
+                        break;  // it's the "end-tag"
+                    }
+                    else
+                    {
+                        // it's a child em-tag
+                        it.previous();
+                        if ((node = tryParseEmphasis(it)) != null) {
+                            em.addChild(node);
+                        }
+                        else {
+                            if (it.hasNext() )
+                                it.next();  // failed to parse a child em-tag, skip it.
+                            return null;
+                        }
+                    }
+                }
+            }
+        }
+
+        return em;
     }
 
     /**
@@ -183,7 +237,7 @@ public class MarkdownParser {
         return new MdText("\n");
     }
 
-    private static MdNode tryParseBreak(ListIterator<MarkdownToken> it) {
+    private static MdBreak tryParseBreak(ListIterator<MarkdownToken> it) {
         if (!it.hasNext())
             return null;
 
@@ -198,6 +252,8 @@ public class MarkdownParser {
     // Helpers:
     //
     private static MarkdownToken readToken(MarkdownTokenType tokenType, ListIterator<MarkdownToken> it) {
+        if (!it.hasNext())
+            return null;
         MarkdownToken token = it.next();
         if (token.getType() != tokenType) {
             // not the correct tokenType

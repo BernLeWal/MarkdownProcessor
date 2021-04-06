@@ -49,4 +49,23 @@ public class HtmlGeneratorVisitor implements Visitor {
     public void visitBreak(MdBreak lineBreak) {
         content.append("<br/>\n");
     }
+
+    @Override
+    public void visitEmphasis(MdEmphasis emphasis) {
+        content.append(
+            switch (emphasis.getKind() ) {
+                case ITALIC -> "<i>";
+                case BOLD -> "<b>";
+                default -> "<b><i>";
+            }
+        );
+        emphasis.acceptChildren(this);
+        content.append(
+                switch (emphasis.getKind() ) {
+                    case ITALIC -> "</i>";
+                    case BOLD -> "</b>";
+                    default -> "</i></b>";
+                }
+        );
+    }
 }
