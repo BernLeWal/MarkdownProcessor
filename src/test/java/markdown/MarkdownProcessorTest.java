@@ -60,7 +60,12 @@ class MarkdownProcessorTest {
     }
 
     @Test
-    void test_basic05() {
+    void test_basic05_emphasis() {
         test_file("basic05_emphasis.md", "basic05_emphasis.html");
+    }
+
+    @Test
+    void test_basic06_blockquotes() {
+        test_file( "basic06_blockquotes.md", "basic06_blockquotes.html");
     }
 }

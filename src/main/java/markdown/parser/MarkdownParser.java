@@ -35,13 +35,13 @@ public class MarkdownParser {
         try {
             while (it.hasNext()) {
                 MdNode node;
-                if ((node = tryParseParagraph(it)) != null) {
+                if ((node = tryParseParagraph(it, null)) != null) {
                     doc.addChild(node);
-                } else if ((node = tryParseHeading(it)) != null) {
-                    doc.addChild(node);
-                } else if ((node = tryParseBreak(it)) != null ) {
+                } else if ((node = tryParseHeading(it, null)) != null) {
                     doc.addChild(node);
                 } else if ((node = tryParseHtml(it)) != null) {
+                    doc.addChild(node);
+                } else if ((node = tryParseBlockQuite(it, null)) != null) {
                     doc.addChild(node);
                 } else {
                     throw new MarkdownParseException("Invalid token!", doc, it.next());
@@ -69,7 +69,7 @@ public class MarkdownParser {
             return null;
 
         String value = token.getValue().toLowerCase();
-        if (value.equals("<br>") || value.equals("<br/>") )
+        if (value.equals("<br>") || value.equals("<br/>"))
             return new MdBreak();
         else
             return new MdHtml(token.getValue());
@@ -84,7 +84,7 @@ public class MarkdownParser {
      * @throws MarkdownParseException Rule (BNF):
      *                                heading ::= "#" {"#"}* {text}* crlf
      */
-    private static MdHeading tryParseHeading(ListIterator<MarkdownToken> it) throws MarkdownParseException {
+    private static MdHeading tryParseHeading(ListIterator<MarkdownToken> it, String checkBlockQuote) {
         if (!it.hasNext())
             return null;
 
@@ -92,6 +92,15 @@ public class MarkdownParser {
         MarkdownToken token;
         if ((token = readToken(MarkdownTokenType.H, it)) == null)
             return null;
+        if (checkBlockQuote != null) {
+            if ((token = readToken(MarkdownTokenType.QUOTE, it)) == null)
+                return null;    // not a blockquote
+            else if (!token.getValue().equals(checkBlockQuote)) {
+                it.previous();
+                return null;    // it is a child-blockquote
+            }
+        }
+
         MdHeading heading = new MdHeading(token.getValue().length());
 
         // add child-tokens
@@ -102,12 +111,12 @@ public class MarkdownParser {
             } else if (tryParseCrLf(it) != null) {
                 return heading;
             } else
-                throw new MarkdownParseException("Heading is invalid, no text-token!", heading, it.next());
+                return null;    // Heading is invalid, no text-token!
         }
 
         // check for end-token MarkdownTokenType.CRLF
         if (it.hasNext() && ((token = readToken(MarkdownTokenType.CRLF, it)) == null))
-            throw new MarkdownParseException("Invalid token!", heading, token);
+            return null;    // Heading is invalid, no CRLF token at the end
 
         return heading;
     }
@@ -119,10 +128,20 @@ public class MarkdownParser {
      * @return Rule (BNF):
      * paragraph ::= { text | crlf }* crlf
      */
-    private static MdParagraph tryParseParagraph(ListIterator<MarkdownToken> it) {
+    private static MdParagraph tryParseParagraph(ListIterator<MarkdownToken> it, String checkBlockQuote) {
         if (!it.hasNext())
             return null;
 
+
+        if (checkBlockQuote != null) {
+            MarkdownToken token;
+            if ((token = readToken(MarkdownTokenType.QUOTE, it)) == null)
+                return null;    // not a blockquote
+            else if (!token.getValue().equals(checkBlockQuote)) {
+                it.previous();
+                return null;    // it is a child-blockquote
+            }
+        }
         MdParagraph paragraph = new MdParagraph();
 
         // add child-tokens
@@ -139,8 +158,22 @@ public class MarkdownParser {
             } else {
                 MarkdownToken token;
                 if ((token = readToken(MarkdownTokenType.CRLF, it)) != null) {
-                    if (it.hasNext() && ((token = readToken(MarkdownTokenType.CRLF, it)) != null))
-                        break;  // double CRLF: end of paragraph
+                    if (it.hasNext()) {
+                        if ((token = readToken(MarkdownTokenType.CRLF, it)) != null)
+                            break;  // double CRLF: end of paragraph
+                        if (checkBlockQuote != null) {
+                            if ((token = readToken(MarkdownTokenType.QUOTE, it)) == null)
+                                break;    // newline is not a blockquote: end of paragraph (and blockquote)
+                            else if (token.getValue().equals(checkBlockQuote)) {
+                                if ((token = readToken(MarkdownTokenType.CRLF, it)) != null)
+                                    break;  // CRLF + QUOTE + CRLF: end of paragraph inside quote
+                            } else if (token.getValue().length() < checkBlockQuote.length()) {
+                                // this blockquote is done, the parent blockquote takes over
+                                it.previous();
+                                break;
+                            }
+                        }
+                    }
                 } else {
                     // end of paragraph
                     if (paragraph.isLeaf())     // no children!
@@ -152,6 +185,39 @@ public class MarkdownParser {
         }
 
         return paragraph;
+    }
+
+    private static MdBlockQuote tryParseBlockQuite(ListIterator<MarkdownToken> it, String checkParentBlockQuote) {
+        if (!it.hasNext())
+            return null;
+        MarkdownToken token;
+        if ((token = readToken(MarkdownTokenType.QUOTE, it)) == null)
+            return null;    // this is not a block-quote
+        if (checkParentBlockQuote != null) {
+            if (checkParentBlockQuote.length() > token.getValue().length()) {
+                it.previous();
+                return null;    // this is a parent block-quote: close the child block-quote
+            }
+        }
+
+        MdBlockQuote blockQuote = new MdBlockQuote(token.getValue());
+        it.previous();
+
+        // add child-tokens
+        MdNode node;
+        while (it.hasNext()) {
+            if ((node = tryParseParagraph(it, blockQuote.getValue())) != null) {
+                blockQuote.addChild(node);
+            } else if ((node = tryParseHeading(it, blockQuote.getValue())) != null) {
+                blockQuote.addChild(node);
+            } else if ((node = tryParseBlockQuite(it, blockQuote.getValue())) != null) {
+                blockQuote.addChild(node);
+            } else if (blockQuote.isLeaf())    // blockquote is empty
+                return null;
+            else
+                break;
+        }
+        return blockQuote;
     }
 
     private static MdEmphasis tryParseEmphasis(ListIterator<MarkdownToken> it) {
@@ -176,21 +242,17 @@ public class MarkdownParser {
                     if (it.hasNext() && ((token = readToken(MarkdownTokenType.CRLF, it)) != null))
                         return null;  // double CRLF: not a valid em-tag
                     else
-                        em.addChild( new MdText(" "));
-                }
-                else if ((token = readToken(MarkdownTokenType.EM, it)) != null) {
-                    if ( token.getValue().equals(em.getValueReverse()) ) {
+                        em.addChild(new MdText(" "));
+                } else if ((token = readToken(MarkdownTokenType.EM, it)) != null) {
+                    if (token.getValue().equals(em.getValueReverse())) {
                         break;  // it's the "end-tag"
-                    }
-                    else
-                    {
+                    } else {
                         // it's a child em-tag
                         it.previous();
                         if ((node = tryParseEmphasis(it)) != null) {
                             em.addChild(node);
-                        }
-                        else {
-                            if (it.hasNext() )
+                        } else {
+                            if (it.hasNext())
                                 it.next();  // failed to parse a child em-tag, skip it.
                             return null;
                         }

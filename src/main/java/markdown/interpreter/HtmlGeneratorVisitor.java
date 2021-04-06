@@ -41,6 +41,13 @@ public class HtmlGeneratorVisitor implements Visitor {
     }
 
     @Override
+    public void visitBlockQuote(MdBlockQuote blockQuote) {
+        content.append("<blockquote>\n");
+        blockQuote.acceptChildren(this);
+        content.append("</blockquote>\n");
+    }
+
+    @Override
     public void visitText(MdText text) {
         content.append(text.getValue() + " ");
     }
